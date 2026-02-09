@@ -7,8 +7,8 @@ VU is a Netflix-style web application dedicated to performing arts (theatre, dan
 - 2026-02-08: Initial MVP build
   - Dark mode UI with orange accent color
   - Hero section with featured show of the month
-  - Horizontal scrolling category rows (Théâtre contemporain, Danse de Montréal, Littérature & Essais, Coup de cœur Diversité)
-  - Navigation: Explorer, Ma Liste, Livres, Spectacles en Live
+  - Horizontal scrolling category rows (Théâtre contemporain, Danse de Montréal, Concerts, Littérature & Essais, Coup de cœur Diversité)
+  - Navigation: Explorer, Ma Liste, Livres, Concerts, Spectacles en Live
   - Video player (YouTube/Vimeo embed) on show detail pages
   - Book reader section on book detail pages
   - "ACHETER UN BILLET" button on video pages
