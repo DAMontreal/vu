@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Search, Heart, Tv, BookOpen, Radio, Menu, X, LogOut } from "lucide-react";
+import { Search, Heart, Tv, BookOpen, Radio, Music, Menu, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
@@ -15,6 +15,7 @@ const navItems = [
   { label: "Explorer", href: "/", icon: Tv },
   { label: "Ma Liste", href: "/ma-liste", icon: Heart },
   { label: "Livres", href: "/livres", icon: BookOpen },
+  { label: "Concerts", href: "/concerts", icon: Music },
   { label: "Spectacles en Live", href: "/live", icon: Radio },
 ];
 

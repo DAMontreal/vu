@@ -11,6 +11,7 @@ import LivreDetail from "@/pages/livre-detail";
 import MaListe from "@/pages/ma-liste";
 import Livres from "@/pages/livres";
 import Live from "@/pages/live";
+import Concerts from "@/pages/concerts";
 import Recherche from "@/pages/recherche";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
@@ -44,6 +45,7 @@ function AppContent() {
         <Route path="/ma-liste" component={MaListe} />
         <Route path="/livres" component={Livres} />
         <Route path="/live" component={Live} />
+        <Route path="/concerts" component={Concerts} />
         <Route path="/recherche" component={Recherche} />
         <Route component={NotFound} />
       </Switch>

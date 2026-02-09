@@ -6,6 +6,7 @@ import type { Content } from "@shared/schema";
 const categoryLabels: Record<string, string> = {
   theatre_contemporain: "Théâtre contemporain",
   danse_montreal: "Danse de Montréal",
+  concerts: "Concerts",
   litterature_essais: "Littérature & Essais",
   coup_de_coeur_diversite: "Coup de cœur Diversité",
 };
