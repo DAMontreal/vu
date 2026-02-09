@@ -12,6 +12,7 @@ export const categoryEnum = pgEnum("category", [
   "litterature_essais",
   "coup_de_coeur_diversite",
   "spectacles_live",
+  "concerts",
 ]);
 
 export const contents = pgTable("contents", {
