@@ -137,7 +137,7 @@ export function Navbar() {
                     data-testid="button-logout"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
-                    Se d\u00e9connecter
+                    Se déconnecter
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

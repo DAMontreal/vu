@@ -44,12 +44,12 @@ const categoryColors: Record<string, string> = {
 };
 
 const categoryLabels: Record<string, string> = {
-  theatre_contemporain: "Th\u00e9\u00e2tre",
+  theatre_contemporain: "Théâtre",
   danse_montreal: "Danse",
   concerts: "Concert",
-  coup_de_coeur_diversite: "Diversit\u00e9",
+  coup_de_coeur_diversite: "Diversité",
   spectacles_live: "Live",
-  litterature_essais: "Litt\u00e9rature",
+  litterature_essais: "Littérature",
 };
 
 export default function CarteMontreal() {
@@ -68,7 +68,7 @@ export default function CarteMontreal() {
           <div className="bg-background/90 backdrop-blur-md rounded-md p-3 border">
             <div className="flex items-center gap-2 mb-2">
               <MapPin className="w-5 h-5 text-primary" />
-              <h1 className="font-serif text-lg font-bold" data-testid="text-carte-title">Montr\u00e9al ce soir</h1>
+              <h1 className="font-serif text-lg font-bold" data-testid="text-carte-title">Montréal ce soir</h1>
             </div>
             <p className="text-xs text-muted-foreground">
               {events.length} spectacle{events.length !== 1 ? "s" : ""} en salle
@@ -158,7 +158,7 @@ export default function CarteMontreal() {
                       className="text-muted-foreground text-lg leading-none"
                       data-testid="button-close-event"
                     >
-                      \u00d7
+                      ×
                     </button>
                   </div>
                   <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">

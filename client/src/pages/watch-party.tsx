@@ -59,7 +59,7 @@ function CreatePartyForm() {
           <h1 className="font-serif text-3xl font-bold" data-testid="text-watch-party-heading">Watch Party</h1>
         </div>
         <p className="text-muted-foreground mb-8">
-          Regardez un spectacle ensemble \u00e0 distance avec vos amis. Cr\u00e9ez une salle et partagez le code.
+          Regardez un spectacle ensemble à distance avec vos amis. Créez une salle et partagez le code.
         </p>
 
         <Card className="p-6">
@@ -69,7 +69,7 @@ function CreatePartyForm() {
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Soir\u00e9e th\u00e9\u00e2tre entre amis"
+                placeholder="Soirée théâtre entre amis"
                 data-testid="input-party-title"
               />
             </div>
@@ -77,11 +77,11 @@ function CreatePartyForm() {
               <label className="text-sm font-medium mb-1 block">Choisir un spectacle</label>
               <Select value={contentId} onValueChange={setContentId}>
                 <SelectTrigger data-testid="select-party-content">
-                  <SelectValue placeholder="S\u00e9lectionner..." />
+                  <SelectValue placeholder="Sélectionner..." />
                 </SelectTrigger>
                 <SelectContent>
                   {videoContents.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.title} \u2014 {c.artist}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>{c.title} — {c.artist}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -92,7 +92,7 @@ function CreatePartyForm() {
               data-testid="button-create-party"
             >
               <Users className="w-4 h-4 mr-2" />
-              {createMutation.isPending ? "Cr\u00e9ation..." : "Cr\u00e9er la salle"}
+              {createMutation.isPending ? "Création..." : "Créer la salle"}
             </Button>
           </div>
         </Card>
@@ -159,7 +159,7 @@ function PartyRoom({ code }: { code: string }) {
     socket.on("party-sync", (data: any) => {
       toast({
         title: data.action === "play" ? "Lecture" : "Pause",
-        description: "L'h\u00f4te a synchronis\u00e9 la lecture.",
+        description: "L'hôte a synchronisé la lecture.",
       });
     });
 
@@ -183,7 +183,7 @@ function PartyRoom({ code }: { code: string }) {
 
   const copyCode = () => {
     navigator.clipboard.writeText(code);
-    toast({ title: "Code copi\u00e9 !", description: `Partagez le code ${code} avec vos amis.` });
+    toast({ title: "Code copié !", description: `Partagez le code ${code} avec vos amis.` });
   };
 
   if (isLoading) {
@@ -203,7 +203,7 @@ function PartyRoom({ code }: { code: string }) {
         <div className="max-w-xl mx-auto px-4 text-center">
           <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2">Salle introuvable</h2>
-          <p className="text-muted-foreground mb-4">Ce code ne correspond \u00e0 aucune salle active.</p>
+          <p className="text-muted-foreground mb-4">Ce code ne correspond à aucune salle active.</p>
           <Link href="/watch-party">
             <Button>
               <ArrowLeft className="w-4 h-4 mr-2" />

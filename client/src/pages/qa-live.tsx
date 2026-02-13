@@ -46,7 +46,7 @@ function QaSessionList() {
           </h1>
         </div>
         <p className="text-muted-foreground mb-8 max-w-xl">
-          Apr\u00e8s chaque diffusion, les artistes r\u00e9pondent \u00e0 vos questions en direct pendant 15 minutes.
+          Après chaque diffusion, les artistes répondent à vos questions en direct pendant 15 minutes.
         </p>
 
         {isLoading ? (
@@ -58,9 +58,9 @@ function QaSessionList() {
         ) : sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24">
             <MessageCircle className="w-16 h-16 text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Aucune session Q&A pr\u00e9vue</h2>
+            <h2 className="text-xl font-semibold mb-2">Aucune session Q&A prévue</h2>
             <p className="text-muted-foreground text-center max-w-md">
-              Revenez bient\u00f4t pour participer aux prochaines sessions de questions-r\u00e9ponses.
+              Revenez bientôt pour participer aux prochaines sessions de questions-réponses.
             </p>
           </div>
         ) : (
@@ -86,7 +86,7 @@ function QaSessionList() {
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="w-3 h-3" />
                         {new Date(session.startsAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                        {" \u2014 "}
+                        {" — "}
                         {new Date(session.endsAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                       </div>
                     </div>

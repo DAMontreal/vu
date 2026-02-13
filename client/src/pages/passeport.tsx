@@ -31,7 +31,7 @@ interface PassportData {
 }
 
 const rewardOptions = [
-  { description: "10% de r\u00e9duction sur un billet en salle", cost: 50, icon: Ticket },
+  { description: "10% de réduction sur un billet en salle", cost: 50, icon: Ticket },
   { description: "Billet gratuit pour un spectacle", cost: 100, icon: Gift },
   { description: "Rencontre VIP avec l'artiste", cost: 200, icon: Star },
 ];
@@ -52,7 +52,7 @@ export default function Passeport() {
     },
     onSuccess: (reward: any) => {
       toast({
-        title: "R\u00e9compense d\u00e9bloqu\u00e9e !",
+        title: "Récompense débloquée !",
         description: `Votre code promo : ${reward.code}`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/passport"] });
@@ -60,7 +60,7 @@ export default function Passeport() {
     onError: () => {
       toast({
         title: "Points insuffisants",
-        description: "Continuez \u00e0 regarder des spectacles pour gagner des points.",
+        description: "Continuez à regarder des spectacles pour gagner des points.",
         variant: "destructive",
       });
     },
@@ -73,7 +73,7 @@ export default function Passeport() {
           <Award className="w-16 h-16 text-primary mx-auto mb-4" />
           <h1 className="font-serif text-3xl font-bold mb-3">Passeport Culturel</h1>
           <p className="text-muted-foreground mb-6">
-            Connectez-vous pour acc\u00e9der \u00e0 votre passeport culturel et gagner des r\u00e9compenses.
+            Connectez-vous pour accéder à votre passeport culturel et gagner des récompenses.
           </p>
           <a href="/api/login">
             <Button data-testid="button-login-passport">Connexion</Button>
@@ -118,7 +118,7 @@ export default function Passeport() {
                 <Trophy className="w-10 h-10 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Vos Points Diversit\u00e9</p>
+                <p className="text-sm text-muted-foreground">Vos Points Diversité</p>
                 <p className="text-4xl font-bold text-primary" data-testid="text-total-points">{totalPoints}</p>
               </div>
             </div>
@@ -136,13 +136,13 @@ export default function Passeport() {
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 <TrendingUp className="w-3 h-3 inline mr-1" />
-                Chaque vid\u00e9o vue = 10 Points Diversit\u00e9
+                Chaque vidéo vue = 10 Points Diversité
               </p>
             </div>
           </div>
         </Card>
 
-        <h2 className="font-serif text-xl font-bold mb-4">R\u00e9compenses disponibles</h2>
+        <h2 className="font-serif text-xl font-bold mb-4">Récompenses disponibles</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
           {rewardOptions.map((option) => {
             const canRedeem = totalPoints >= option.cost;
@@ -162,7 +162,7 @@ export default function Passeport() {
                   onClick={() => redeemMutation.mutate({ description: option.description, pointsCost: option.cost })}
                   data-testid={`button-redeem-${option.cost}`}
                 >
-                  {canRedeem ? "\u00c9changer" : "Points insuffisants"}
+                  {canRedeem ? "Échanger" : "Points insuffisants"}
                 </Button>
               </Card>
             );
@@ -171,7 +171,7 @@ export default function Passeport() {
 
         {passport?.rewards && passport.rewards.length > 0 && (
           <>
-            <h2 className="font-serif text-xl font-bold mb-4">Mes r\u00e9compenses</h2>
+            <h2 className="font-serif text-xl font-bold mb-4">Mes récompenses</h2>
             <div className="space-y-3 mb-10">
               {passport.rewards.map((reward) => (
                 <Card key={reward.id} className="p-4 flex items-center justify-between gap-4 flex-wrap">

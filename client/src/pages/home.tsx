@@ -20,11 +20,11 @@ interface CurationData {
 }
 
 const categoryLabels: Record<string, string> = {
-  theatre_contemporain: "Th\u00e9\u00e2tre contemporain",
-  danse_montreal: "Danse de Montr\u00e9al",
+  theatre_contemporain: "Théâtre contemporain",
+  danse_montreal: "Danse de Montréal",
   concerts: "Concerts",
-  litterature_essais: "Litt\u00e9rature & Essais",
-  coup_de_coeur_diversite: "Coup de c\u0153ur Diversit\u00e9",
+  litterature_essais: "Littérature & Essais",
+  coup_de_coeur_diversite: "Coup de cœur Diversité",
 };
 
 export default function Home() {
@@ -51,7 +51,7 @@ export default function Home() {
             <Link href="/carte">
               <Button variant="outline" className="gap-2 backdrop-blur-sm bg-background/50" data-testid="link-carte-home">
                 <MapPin className="w-4 h-4" />
-                Carte de Montr\u00e9al
+                Carte de Montréal
               </Button>
             </Link>
             <Link href="/passeport">
@@ -81,7 +81,7 @@ export default function Home() {
                       Carte Blanche
                     </Badge>
                     <p className="text-sm">
-                      Ce mois-ci, l'application est configur\u00e9e par{" "}
+                      Ce mois-ci, l'application est configurée par{" "}
                       <span className="font-bold text-primary">{curation.artistName}</span>
                     </p>
                   </div>

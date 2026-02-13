@@ -24,8 +24,8 @@ interface CurationData {
 }
 
 const monthNames = [
-  "Janvier", "F\u00e9vrier", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Ao\u00fbt", "Septembre", "Octobre", "Novembre", "D\u00e9cembre",
+  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
 ];
 
 export default function CarteBlanche() {
@@ -56,7 +56,7 @@ export default function CarteBlanche() {
             <Star className="w-16 h-16 text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">Aucune Carte Blanche active</h2>
             <p className="text-muted-foreground text-center max-w-md">
-              Revenez bient\u00f4t pour d\u00e9couvrir la prochaine s\u00e9lection d'un artiste invit\u00e9.
+              Revenez bientôt pour découvrir la prochaine sélection d'un artiste invité.
             </p>
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function CarteBlanche() {
             <div className="text-center md:text-left">
               <Badge className="mb-3 no-default-hover-elevate no-default-active-elevate">
                 <Star className="w-3 h-3 mr-1" />
-                Carte Blanche \u2014 {monthNames[(curation.month || 1) - 1]} {curation.year}
+                Carte Blanche — {monthNames[(curation.month || 1) - 1]} {curation.year}
               </Badge>
               <h1 className="font-serif text-3xl lg:text-5xl font-bold mb-3" data-testid="text-carte-blanche-artist">
                 {curation.artistName}
@@ -94,10 +94,10 @@ export default function CarteBlanche() {
 
       <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-12">
         <h2 className="font-serif text-2xl font-bold mb-2">
-          Ses coups de c\u0153ur
+          Ses coups de cœur
         </h2>
         <p className="text-muted-foreground mb-8">
-          La s\u00e9lection personnelle de {curation.artistName} pour ce mois-ci.
+          La sélection personnelle de {curation.artistName} pour ce mois-ci.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
