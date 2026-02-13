@@ -1,8 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { Server as SocketIOServer } from "socket.io";
 import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
-import { insertFavoriteSchema, insertWatchProgressSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(
@@ -11,6 +11,46 @@ export async function registerRoutes(
 ): Promise<Server> {
   await setupAuth(app);
   registerAuthRoutes(app);
+
+  const io = new SocketIOServer(httpServer, {
+    cors: { origin: "*" },
+    path: "/socket.io",
+  });
+
+  io.on("connection", (socket) => {
+    socket.on("join-party", (partyId: string) => {
+      socket.join(`party-${partyId}`);
+    });
+
+    socket.on("party-message", async (data: { partyId: string; userId: string; userName: string; message: string }) => {
+      const msg = await storage.addPartyMessage({
+        partyId: data.partyId,
+        userId: data.userId,
+        userName: data.userName,
+        message: data.message,
+      });
+      io.to(`party-${data.partyId}`).emit("new-party-message", msg);
+    });
+
+    socket.on("party-sync", (data: { partyId: string; action: string; time?: number }) => {
+      socket.to(`party-${data.partyId}`).emit("party-sync", data);
+    });
+
+    socket.on("join-qa", (sessionId: string) => {
+      socket.join(`qa-${sessionId}`);
+    });
+
+    socket.on("qa-message", async (data: { sessionId: string; userId: string; userName: string; message: string; isHost: boolean }) => {
+      const msg = await storage.addQaMessage({
+        sessionId: data.sessionId,
+        userId: data.userId,
+        userName: data.userName,
+        message: data.message,
+        isHost: data.isHost,
+      });
+      io.to(`qa-${data.sessionId}`).emit("new-qa-message", msg);
+    });
+  });
 
   app.get("/api/contents", async (_req, res) => {
     try {
@@ -139,6 +179,153 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching watch progress:", error);
       res.status(500).json({ message: "Failed to fetch progress" });
+    }
+  });
+
+  app.get("/api/venues", async (_req, res) => {
+    try {
+      const venueList = await storage.getAllVenues();
+      res.json(venueList);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch venues" });
+    }
+  });
+
+  app.get("/api/events", async (_req, res) => {
+    try {
+      const eventList = await storage.getAllEvents();
+      res.json(eventList);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch events" });
+    }
+  });
+
+  app.get("/api/events/tonight", async (_req, res) => {
+    try {
+      const eventList = await storage.getEventsTonight();
+      res.json(eventList);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tonight's events" });
+    }
+  });
+
+  app.get("/api/curation/active", async (_req, res) => {
+    try {
+      const curation = await storage.getActiveCuration();
+      res.json(curation || null);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch curation" });
+    }
+  });
+
+  app.get("/api/watch-parties/:code", async (req, res) => {
+    try {
+      const party = await storage.getWatchPartyByCode(req.params.code);
+      if (!party) {
+        return res.status(404).json({ message: "Party not found" });
+      }
+      const content = await storage.getContent(party.contentId);
+      const messages = await storage.getPartyMessages(party.id);
+      res.json({ ...party, content, messages });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch party" });
+    }
+  });
+
+  app.post("/api/watch-parties", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const parsed = z.object({
+        contentId: z.string().min(1),
+        title: z.string().min(1),
+      }).safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid request body" });
+      }
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const party = await storage.createWatchParty({
+        contentId: parsed.data.contentId,
+        hostUserId: userId,
+        title: parsed.data.title,
+        code,
+      });
+      res.status(201).json(party);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create party" });
+    }
+  });
+
+  app.get("/api/qa-sessions", async (_req, res) => {
+    try {
+      const sessions = await storage.getActiveQaSessions();
+      res.json(sessions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch QA sessions" });
+    }
+  });
+
+  app.get("/api/qa-sessions/:id", async (req, res) => {
+    try {
+      const session = await storage.getQaSession(req.params.id);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      const content = await storage.getContent(session.contentId);
+      const messages = await storage.getQaMessages(session.id);
+      res.json({ ...session, content, messages });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch QA session" });
+    }
+  });
+
+  app.get("/api/passport", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const points = await storage.getUserPoints(userId);
+      const history = await storage.getPointEvents(userId);
+      const userRewards = await storage.getUserRewards(userId);
+      res.json({
+        totalPoints: points?.totalPoints || 0,
+        history,
+        rewards: userRewards,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch passport" });
+    }
+  });
+
+  app.post("/api/passport/earn", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const parsed = z.object({ contentId: z.string().min(1) }).safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid request body" });
+      }
+      await storage.addPoints(userId, parsed.data.contentId, 10);
+      const points = await storage.getUserPoints(userId);
+      res.json({ totalPoints: points?.totalPoints || 0 });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to earn points" });
+    }
+  });
+
+  app.post("/api/passport/redeem", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const parsed = z.object({
+        description: z.string().min(1),
+        pointsCost: z.number().int().min(1),
+      }).safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid request body" });
+      }
+      const reward = await storage.redeemReward(userId, parsed.data.description, parsed.data.pointsCost);
+      res.status(201).json(reward);
+    } catch (error: any) {
+      if (error.message === "Not enough points") {
+        return res.status(400).json({ message: "Points insuffisants" });
+      }
+      res.status(500).json({ message: "Failed to redeem reward" });
     }
   });
 

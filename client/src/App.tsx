@@ -12,6 +12,11 @@ import MaListe from "@/pages/ma-liste";
 import Livres from "@/pages/livres";
 import Live from "@/pages/live";
 import Concerts from "@/pages/concerts";
+import CarteMontreal from "@/pages/carte-montreal";
+import CarteBlanche from "@/pages/carte-blanche";
+import WatchPartyPage from "@/pages/watch-party";
+import QaLivePage from "@/pages/qa-live";
+import Passeport from "@/pages/passeport";
 import Recherche from "@/pages/recherche";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
@@ -46,6 +51,13 @@ function AppContent() {
         <Route path="/livres" component={Livres} />
         <Route path="/live" component={Live} />
         <Route path="/concerts" component={Concerts} />
+        <Route path="/carte" component={CarteMontreal} />
+        <Route path="/carte-blanche" component={CarteBlanche} />
+        <Route path="/watch-party" component={WatchPartyPage} />
+        <Route path="/watch-party/:code" component={WatchPartyPage} />
+        <Route path="/qa" component={QaLivePage} />
+        <Route path="/qa/:id" component={QaLivePage} />
+        <Route path="/passeport" component={Passeport} />
         <Route path="/recherche" component={Recherche} />
         <Route component={NotFound} />
       </Switch>

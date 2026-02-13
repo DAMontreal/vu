@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { contents } from "@shared/schema";
+import { contents, venues, events, curations, curationItems, qaSessions } from "@shared/schema";
 
 const seedData = [
   {
@@ -219,10 +219,37 @@ const seedData = [
   },
 ];
 
+const venueData = [
+  { name: "Place des Arts", address: "175 Rue Sainte-Catherine O, Montréal", lat: 45.5081, lng: -73.5664 },
+  { name: "Théâtre du Nouveau Monde", address: "84 Rue Sainte-Catherine O, Montréal", lat: 45.5088, lng: -73.5638 },
+  { name: "Usine C", address: "1345 Avenue Lalonde, Montréal", lat: 45.5285, lng: -73.5521 },
+  { name: "Espace Go", address: "4890 Boulevard Saint-Laurent, Montréal", lat: 45.5243, lng: -73.5879 },
+  { name: "Théâtre Denise-Pelletier", address: "4353 Rue Sainte-Catherine E, Montréal", lat: 45.5555, lng: -73.5412 },
+  { name: "Maison symphonique", address: "1600 Rue Saint-Urbain, Montréal", lat: 45.5076, lng: -73.5677 },
+  { name: "Théâtre Outremont", address: "1248 Avenue Bernard, Montréal", lat: 45.5199, lng: -73.6072 },
+  { name: "Dièse Onze", address: "4115 Rue Saint-Denis, Montréal", lat: 45.5218, lng: -73.5817 },
+];
+
 export async function seedDatabase() {
   const existing = await db.select().from(contents);
   if (existing.length > 0) {
     console.log("Database already seeded, skipping...");
+
+    const existingVenues = await db.select().from(venues);
+    if (existingVenues.length === 0) {
+      await seedVenuesAndEvents();
+    }
+
+    const existingCurations = await db.select().from(curations);
+    if (existingCurations.length === 0) {
+      await seedCuration();
+    }
+
+    const existingQa = await db.select().from(qaSessions);
+    if (existingQa.length === 0) {
+      await seedQaSessions();
+    }
+
     return;
   }
 
@@ -231,4 +258,103 @@ export async function seedDatabase() {
     await db.insert(contents).values(item);
   }
   console.log(`Seeded ${seedData.length} content items.`);
+
+  await seedVenuesAndEvents();
+  await seedCuration();
+  await seedQaSessions();
+}
+
+async function seedVenuesAndEvents() {
+  console.log("Seeding venues and events...");
+  const createdVenues: Record<string, string> = {};
+  for (const v of venueData) {
+    const [created] = await db.insert(venues).values(v).returning();
+    createdVenues[v.name] = created.id;
+  }
+
+  const allContents = await db.select().from(contents);
+  const videoContents = allContents.filter(c => c.type === "video" && c.venue);
+
+  const now = new Date();
+  const tonight8pm = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 20, 0, 0);
+  const tonight10pm = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 22, 0, 0);
+
+  for (const content of videoContents) {
+    const venueId = createdVenues[content.venue!];
+    if (venueId) {
+      await db.insert(events).values({
+        contentId: content.id,
+        venueId,
+        startTime: tonight8pm,
+        endTime: tonight10pm,
+        isTonight: true,
+      });
+    }
+  }
+  console.log("Venues and events seeded.");
+}
+
+async function seedCuration() {
+  console.log("Seeding carte blanche...");
+  const allContents = await db.select().from(contents);
+
+  const [curation] = await db.insert(curations).values({
+    title: "Carte Blanche",
+    artistName: "Robert Lepage",
+    artistBio: "Metteur en scène, dramaturge et cinéaste québécois de renommée internationale. Fondateur d'Ex Machina, il est reconnu pour ses créations multidisciplinaires qui repoussent les frontières du théâtre contemporain. Sa vision unique allie technologie et poésie pour créer des expériences scéniques inoubliables.",
+    artistImageUrl: "/images/theatre-1.png",
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+    active: true,
+  }).returning();
+
+  const picks = allContents.slice(0, 5);
+  const notes = [
+    "Une pièce qui m'a profondément touché par sa modernité et son audace.",
+    "Un mouvement chorégraphique qui rappelle la beauté de la simplicité.",
+    "Une œuvre essentielle pour comprendre notre époque.",
+    "La puissance de cette performance m'a laissé sans voix.",
+    "Un chef-d'œuvre de sensibilité et d'intelligence artistique.",
+  ];
+
+  for (let i = 0; i < picks.length; i++) {
+    await db.insert(curationItems).values({
+      curationId: curation.id,
+      contentId: picks[i].id,
+      note: notes[i],
+      sortOrder: i,
+    });
+  }
+  console.log("Carte blanche seeded.");
+}
+
+async function seedQaSessions() {
+  console.log("Seeding Q&A sessions...");
+  const allContents = await db.select().from(contents);
+  const videoContents = allContents.filter(c => c.type === "video");
+
+  if (videoContents.length >= 2) {
+    const now = new Date();
+    const in30min = new Date(now.getTime() + 30 * 60 * 1000);
+    const in2hours = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+    await db.insert(qaSessions).values({
+      contentId: videoContents[0].id,
+      hostName: videoContents[0].artist,
+      title: `Q&A avec ${videoContents[0].artist}`,
+      startsAt: in30min,
+      endsAt: new Date(in30min.getTime() + 15 * 60 * 1000),
+      isActive: true,
+    });
+
+    await db.insert(qaSessions).values({
+      contentId: videoContents[1].id,
+      hostName: videoContents[1].artist,
+      title: `Q&A avec ${videoContents[1].artist}`,
+      startsAt: in2hours,
+      endsAt: new Date(in2hours.getTime() + 15 * 60 * 1000),
+      isActive: true,
+    });
+  }
+  console.log("Q&A sessions seeded.");
 }

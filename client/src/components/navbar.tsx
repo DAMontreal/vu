@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Search, Heart, Tv, BookOpen, Radio, Music, Menu, X, LogOut } from "lucide-react";
+import { Search, Heart, Tv, BookOpen, Radio, Music, MapPin, Star, Users, MessageCircle, Award, Menu, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
@@ -9,14 +9,23 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-const navItems = [
+const mainNavItems = [
   { label: "Explorer", href: "/", icon: Tv },
-  { label: "Ma Liste", href: "/ma-liste", icon: Heart },
-  { label: "Livres", href: "/livres", icon: BookOpen },
+  { label: "Carte", href: "/carte", icon: MapPin },
   { label: "Concerts", href: "/concerts", icon: Music },
-  { label: "Spectacles en Live", href: "/live", icon: Radio },
+  { label: "Livres", href: "/livres", icon: BookOpen },
+  { label: "Live", href: "/live", icon: Radio },
+];
+
+const moreNavItems = [
+  { label: "Carte Blanche", href: "/carte-blanche", icon: Star },
+  { label: "Watch Party", href: "/watch-party", icon: Users },
+  { label: "Q&A", href: "/qa", icon: MessageCircle },
+  { label: "Ma Liste", href: "/ma-liste", icon: Heart },
+  { label: "Passeport", href: "/passeport", icon: Award },
 ];
 
 export function Navbar() {
@@ -31,6 +40,8 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const allNavItems = [...mainNavItems, ...moreNavItems];
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -40,23 +51,21 @@ export function Navbar() {
     >
       <div className="max-w-[1400px] mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between gap-4 h-16">
-          <div className="flex items-center gap-8 flex-wrap">
+          <div className="flex items-center gap-6 flex-wrap">
             <Link href="/" data-testid="link-home">
               <span className="font-serif text-2xl font-bold tracking-tight text-primary">
                 VU
               </span>
             </Link>
-            <div className="hidden md:flex items-center gap-1 flex-wrap">
-              {navItems.map((item) => {
+            <div className="hidden lg:flex items-center gap-1 flex-wrap">
+              {mainNavItems.map((item) => {
                 const isActive = location === item.href;
                 return (
                   <Link key={item.href} href={item.href}>
                     <Button
                       variant="ghost"
-                      className={`gap-2 text-sm font-medium ${
-                        isActive
-                          ? "text-primary"
-                          : "text-muted-foreground"
+                      className={`gap-1.5 text-sm font-medium ${
+                        isActive ? "text-primary" : "text-muted-foreground"
                       }`}
                       data-testid={`link-nav-${item.label.toLowerCase().replace(/\s/g, "-")}`}
                     >
@@ -66,6 +75,23 @@ export function Navbar() {
                   </Link>
                 );
               })}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="gap-1.5 text-sm font-medium text-muted-foreground" data-testid="button-more-nav">
+                    Plus
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {moreNavItems.map((item) => (
+                    <DropdownMenuItem key={item.href} asChild>
+                      <Link href={item.href}>
+                        <item.icon className="w-4 h-4 mr-2" />
+                        {item.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -92,12 +118,26 @@ export function Navbar() {
                   <DropdownMenuItem className="text-muted-foreground text-xs" disabled>
                     {user.email}
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/passeport">
+                      <Award className="w-4 h-4 mr-2" />
+                      Passeport Culturel
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/ma-liste">
+                      <Heart className="w-4 h-4 mr-2" />
+                      Ma Liste
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => logout()}
                     data-testid="button-logout"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
-                    Se déconnecter
+                    Se d\u00e9connecter
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -112,7 +152,7 @@ export function Navbar() {
             <Button
               size="icon"
               variant="ghost"
-              className="md:hidden"
+              className="lg:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               data-testid="button-mobile-menu"
             >
@@ -123,9 +163,9 @@ export function Navbar() {
       </div>
 
       {mobileMenuOpen && (
-        <div className="md:hidden bg-background/95 backdrop-blur-md border-t px-4 py-4">
+        <div className="lg:hidden bg-background/95 backdrop-blur-md border-t px-4 py-4 max-h-[calc(100vh-4rem)] overflow-y-auto">
           <div className="flex flex-col gap-1">
-            {navItems.map((item) => {
+            {allNavItems.map((item) => {
               const isActive = location === item.href;
               return (
                 <Link key={item.href} href={item.href}>
