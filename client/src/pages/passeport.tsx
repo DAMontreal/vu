@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Award, Ticket, Gift, Star, Trophy, TrendingUp } from "lucide-react";
+import { Award, Ticket, Gift, Star, Trophy, TrendingUp, MapPin, User, Compass, Film, Eye, Music } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Content } from "@shared/schema";
+import { Link } from "wouter";
+import type { Content, BadgeDef, UserBadge } from "@shared/schema";
 
 interface PassportData {
   totalPoints: number;
@@ -42,6 +43,21 @@ export default function Passeport() {
 
   const { data: passport, isLoading } = useQuery<PassportData>({
     queryKey: ["/api/passport"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: allBadges = [] } = useQuery<BadgeDef[]>({
+    queryKey: ["/api/badges"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: myBadges = [] } = useQuery<(UserBadge & { badge: BadgeDef })[]>({
+    queryKey: ["/api/badges/me"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: checkins = [] } = useQuery<any[]>({
+    queryKey: ["/api/checkins"],
     enabled: isAuthenticated,
   });
 
@@ -167,6 +183,72 @@ export default function Passeport() {
               </Card>
             );
           })}
+        </div>
+
+        {allBadges.length > 0 && (
+          <>
+            <h2 className="font-serif text-xl font-bold mb-4">Badges & Réalisations</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-10">
+              {allBadges.map((badge) => {
+                const earned = myBadges.some(mb => mb.badgeId === badge.id);
+                const iconMap: Record<string, any> = {
+                  Compass, Film, Eye, Award, MapPin, Music,
+                };
+                const IconComp = iconMap[badge.icon] || Award;
+                return (
+                  <div
+                    key={badge.id}
+                    className={`p-4 rounded-md border text-center ${earned ? "bg-primary/10 border-primary/30" : "opacity-40"}`}
+                    data-testid={`passeport-badge-${badge.code}`}
+                  >
+                    <IconComp className="w-7 h-7 mx-auto mb-1 text-primary" />
+                    <p className="text-sm font-semibold">{badge.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{badge.description}</p>
+                    {earned && (
+                      <Badge variant="default" className="mt-2 no-default-hover-elevate no-default-active-elevate">
+                        Obtenu
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {checkins.length > 0 && (
+          <>
+            <h2 className="font-serif text-xl font-bold mb-4">Mes Check-ins ({checkins.length})</h2>
+            <div className="space-y-2 mb-10">
+              {checkins.slice(0, 5).map((ci: any, idx: number) => (
+                <div key={ci.id} className="flex items-center gap-3 py-2 border-b last:border-0" data-testid={`checkin-row-${idx}`}>
+                  <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{ci.venue?.name}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(ci.createdAt).toLocaleDateString("fr-FR")}</p>
+                  </div>
+                  <Badge variant="secondary" className="no-default-hover-elevate no-default-active-elevate">
+                    +15 pts
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        <div className="flex gap-3 mb-10 flex-wrap">
+          <Link href="/social">
+            <Button variant="outline" className="gap-2" data-testid="link-social-from-passeport">
+              <User className="w-4 h-4" />
+              Foyer Numérique
+            </Button>
+          </Link>
+          <Link href="/profil">
+            <Button variant="outline" className="gap-2" data-testid="link-profil-from-passeport">
+              <User className="w-4 h-4" />
+              Mon Profil
+            </Button>
+          </Link>
         </div>
 
         {passport?.rewards && passport.rewards.length > 0 && (

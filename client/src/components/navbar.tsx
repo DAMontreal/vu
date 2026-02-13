@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Search, Heart, Tv, BookOpen, Radio, Music, MapPin, Star, Users, MessageCircle, Award, Menu, X, LogOut } from "lucide-react";
+import { Search, Heart, Tv, BookOpen, Radio, Music, MapPin, Star, Users, MessageCircle, Award, Menu, X, LogOut, User, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
@@ -18,6 +18,7 @@ const mainNavItems = [
   { label: "Concerts", href: "/concerts", icon: Music },
   { label: "Livres", href: "/livres", icon: BookOpen },
   { label: "Live", href: "/live", icon: Radio },
+  { label: "Social", href: "/social", icon: Users },
 ];
 
 const moreNavItems = [
@@ -120,6 +121,12 @@ export function Navbar() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
+                    <Link href="/profil">
+                      <User className="w-4 h-4 mr-2" />
+                      Mon Profil
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link href="/passeport">
                       <Award className="w-4 h-4 mr-2" />
                       Passeport Culturel
@@ -129,6 +136,12 @@ export function Navbar() {
                     <Link href="/ma-liste">
                       <Heart className="w-4 h-4 mr-2" />
                       Ma Liste
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/impact">
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Tableau de bord
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

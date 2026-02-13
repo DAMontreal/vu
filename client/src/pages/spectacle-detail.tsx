@@ -8,13 +8,23 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Content, Favorite } from "@shared/schema";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export default function SpectacleDetail() {
   const [, params] = useRoute("/spectacle/:id");
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const trackEvent = useCallback(async (contentId: string, eventType: string, metadata?: any) => {
+    try {
+      await fetch("/api/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contentId, eventType, metadata }),
+      });
+    } catch {}
+  }, []);
 
   const { data: content, isLoading } = useQuery<Content>({
     queryKey: ["/api/contents", params?.id],
@@ -43,6 +53,25 @@ export default function SpectacleDetail() {
       toast({ title: "Erreur", description: "Veuillez vous connecter.", variant: "destructive" });
     },
   });
+
+  useEffect(() => {
+    if (content?.id) {
+      trackEvent(content.id, "page_view", { category: content.category });
+    }
+  }, [content?.id]);
+
+  const handleTicketClick = () => {
+    if (content?.id) {
+      trackEvent(content.id, "ticket_click");
+    }
+  };
+
+  const handlePlayClick = () => {
+    setIsPlaying(true);
+    if (content?.id) {
+      trackEvent(content.id, "view_start", { category: content.category });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -107,7 +136,7 @@ export default function SpectacleDetail() {
             {content.videoUrl && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <button
-                  onClick={() => setIsPlaying(true)}
+                  onClick={handlePlayClick}
                   className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center transition-transform hover:scale-110"
                   data-testid="button-play-video"
                 >
@@ -169,7 +198,7 @@ export default function SpectacleDetail() {
               )}
               {content.ticketUrl && (
                 <a href={content.ticketUrl} target="_blank" rel="noopener noreferrer">
-                  <Button size="lg" variant="default" className="gap-2 bg-primary" data-testid="button-buy-ticket">
+                  <Button size="lg" variant="default" className="gap-2 bg-primary" data-testid="button-buy-ticket" onClick={handleTicketClick}>
                     <Ticket className="w-5 h-5" />
                     ACHETER UN BILLET
                   </Button>

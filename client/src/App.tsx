@@ -19,6 +19,9 @@ import QaLivePage from "@/pages/qa-live";
 import Passeport from "@/pages/passeport";
 import Recherche from "@/pages/recherche";
 import Landing from "@/pages/landing";
+import AdminDashboard from "@/pages/admin-dashboard";
+import Profil from "@/pages/profil";
+import Social from "@/pages/social";
 import NotFound from "@/pages/not-found";
 import { useEffect } from "react";
 
@@ -59,6 +62,9 @@ function AppContent() {
         <Route path="/qa/:id" component={QaLivePage} />
         <Route path="/passeport" component={Passeport} />
         <Route path="/recherche" component={Recherche} />
+        <Route path="/social" component={Social} />
+        <Route path="/profil" component={Profil} />
+        <Route path="/admin/impact" component={AdminDashboard} />
         <Route component={NotFound} />
       </Switch>
     </div>

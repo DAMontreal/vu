@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { contents, venues, events, curations, curationItems, qaSessions } from "@shared/schema";
+import { contents, venues, events, curations, curationItems, qaSessions, badges, contentEvents } from "@shared/schema";
 
 const seedData = [
   {
@@ -250,6 +250,16 @@ export async function seedDatabase() {
       await seedQaSessions();
     }
 
+    const existingBadges = await db.select().from(badges);
+    if (existingBadges.length === 0) {
+      await seedBadges();
+    }
+
+    const existingEvents = await db.select().from(contentEvents);
+    if (existingEvents.length === 0) {
+      await seedSampleAnalytics();
+    }
+
     return;
   }
 
@@ -262,6 +272,8 @@ export async function seedDatabase() {
   await seedVenuesAndEvents();
   await seedCuration();
   await seedQaSessions();
+  await seedBadges();
+  await seedSampleAnalytics();
 }
 
 async function seedVenuesAndEvents() {
@@ -357,4 +369,80 @@ async function seedQaSessions() {
     });
   }
   console.log("Q&A sessions seeded.");
+}
+
+const badgeData = [
+  {
+    code: "explorer",
+    name: "Explorateur",
+    description: "Vous avez découvert 3 genres différents d'arts de la scène.",
+    icon: "Compass",
+    criteria: { type: "genre_count", count: 3 },
+  },
+  {
+    code: "cinephile",
+    name: "Cinéphile des planches",
+    description: "Vous avez regardé 5 spectacles sur la plateforme.",
+    icon: "Film",
+    criteria: { type: "watch_count", count: 5 },
+  },
+  {
+    code: "assidu",
+    name: "Spectateur assidu",
+    description: "Vous avez regardé 10 spectacles sur la plateforme.",
+    icon: "Eye",
+    criteria: { type: "watch_count", count: 10 },
+  },
+  {
+    code: "ambassadeur",
+    name: "Ambassadeur",
+    description: "Vous avez effectué 5 check-ins en salle de spectacle.",
+    icon: "Award",
+    criteria: { type: "checkin_count", count: 5 },
+  },
+  {
+    code: "premier_pas",
+    name: "Premier pas en salle",
+    description: "Votre premier check-in dans un lieu de diffusion.",
+    icon: "MapPin",
+    criteria: { type: "checkin_count", count: 1 },
+  },
+  {
+    code: "melomane",
+    name: "Mélomane",
+    description: "Vous avez assisté à 3 concerts.",
+    icon: "Music",
+    criteria: { type: "watch_count", count: 3 },
+  },
+];
+
+async function seedBadges() {
+  console.log("Seeding badges...");
+  for (const badge of badgeData) {
+    await db.insert(badges).values(badge);
+  }
+  console.log(`Seeded ${badgeData.length} badges.`);
+}
+
+async function seedSampleAnalytics() {
+  console.log("Seeding sample analytics data...");
+  const allContents = await db.select().from(contents);
+  if (allContents.length === 0) return;
+
+  const postalPrefixes = ["H2X", "H2Y", "H3A", "H2L", "H2K", "H3B", "H2T", "H1W", "H3C", "H2J"];
+  const eventTypes = ["view_start", "ticket_click", "category_transition"] as const;
+
+  for (let i = 0; i < 80; i++) {
+    const content = allContents[Math.floor(Math.random() * allContents.length)];
+    const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+    const postal = postalPrefixes[Math.floor(Math.random() * postalPrefixes.length)];
+    await db.insert(contentEvents).values({
+      userId: null,
+      contentId: content.id,
+      eventType,
+      postalPrefix: postal,
+      metadata: null,
+    });
+  }
+  console.log("Sample analytics data seeded.");
 }

@@ -329,5 +329,275 @@ export async function registerRoutes(
     }
   });
 
+  // ─── Event Tracking ───
+  app.post("/api/track", async (req: any, res) => {
+    try {
+      const parsed = z.object({
+        contentId: z.string().min(1),
+        eventType: z.enum(["page_view", "view_start", "view_end", "ticket_click", "category_transition", "favorite_add", "checkin"]),
+        metadata: z.any().optional(),
+        postalPrefix: z.string().max(3).optional(),
+      }).safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid request body" });
+      }
+      const userId = req.user?.claims?.sub || null;
+      const event = await storage.trackEvent({
+        userId,
+        contentId: parsed.data.contentId,
+        eventType: parsed.data.eventType,
+        metadata: parsed.data.metadata || null,
+        postalPrefix: parsed.data.postalPrefix || null,
+      });
+      res.status(201).json(event);
+    } catch (error) {
+      console.error("Error tracking event:", error);
+      res.status(500).json({ message: "Failed to track event" });
+    }
+  });
+
+  // ─── Admin Impact Dashboard ───
+  const isAdmin = async (req: any, res: any, next: any) => {
+    if (!req.user?.claims?.sub) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const profile = await storage.getUserProfile(req.user.claims.sub);
+    if (!profile?.isAdmin) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    next();
+  };
+
+  app.get("/api/admin/impact/overview", isAuthenticated, isAdmin, async (_req, res) => {
+    try {
+      const overview = await storage.getAdminOverview();
+      res.json(overview);
+    } catch (error) {
+      console.error("Error fetching admin overview:", error);
+      res.status(500).json({ message: "Failed to fetch overview" });
+    }
+  });
+
+  app.get("/api/admin/impact/heatmap", isAuthenticated, isAdmin, async (_req, res) => {
+    try {
+      const heatmap = await storage.getAdminHeatmap();
+      res.json(heatmap);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch heatmap" });
+    }
+  });
+
+  app.get("/api/admin/impact/retention", isAuthenticated, isAdmin, async (_req, res) => {
+    try {
+      const retention = await storage.getAdminRetention();
+      res.json(retention);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch retention" });
+    }
+  });
+
+  app.get("/api/admin/impact/funnel", isAuthenticated, isAdmin, async (_req, res) => {
+    try {
+      const funnel = await storage.getAdminConversionFunnel();
+      res.json(funnel);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch funnel" });
+    }
+  });
+
+  // ─── User Profile (Loi 25 + Social Opt-in) ───
+  app.get("/api/profile", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      let profile = await storage.getUserProfile(userId);
+      if (!profile) {
+        profile = await storage.upsertUserProfile({ userId });
+      }
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      res.status(500).json({ message: "Failed to fetch profile" });
+    }
+  });
+
+  app.put("/api/profile", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const parsed = z.object({
+        displayName: z.string().optional(),
+        bio: z.string().optional(),
+        avatarUrl: z.string().optional(),
+        isCuratorOptIn: z.boolean().optional(),
+        isSocialOptIn: z.boolean().optional(),
+        showFavorites: z.boolean().optional(),
+        showWatchHistory: z.boolean().optional(),
+        showReadings: z.boolean().optional(),
+      }).safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid request body" });
+      }
+      const profile = await storage.upsertUserProfile({ userId, ...parsed.data });
+      res.json(profile);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // ─── Social Feed (Foyer Numérique) ───
+  app.get("/api/social/feed", async (_req, res) => {
+    try {
+      const feed = await storage.getSocialFeed(30);
+      res.json(feed);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch social feed" });
+    }
+  });
+
+  // ─── Check-in ───
+  app.post("/api/checkins", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const parsed = z.object({
+        venueId: z.string().min(1),
+        eventId: z.string().optional(),
+        method: z.enum(["qr", "geo"]),
+      }).safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid request body" });
+      }
+      const checkin = await storage.createCheckin({
+        userId,
+        venueId: parsed.data.venueId,
+        eventId: parsed.data.eventId || null,
+        method: parsed.data.method,
+      });
+
+      await storage.addPoints(userId, parsed.data.venueId, 15);
+
+      await storage.addSocialActivity({
+        userId,
+        activityType: "checkin",
+        venueId: parsed.data.venueId,
+        contentId: null,
+        description: null,
+      });
+
+      await storage.trackEvent({
+        userId,
+        contentId: parsed.data.venueId,
+        eventType: "checkin",
+        metadata: { method: parsed.data.method },
+        postalPrefix: null,
+      });
+
+      const allCheckins = await storage.getUserCheckins(userId);
+      const allBadges = await storage.getAllBadges();
+      for (const badge of allBadges) {
+        const criteria = badge.criteria as any;
+        if (!criteria) continue;
+        const has = await storage.hasUserBadge(userId, badge.id);
+        if (has) continue;
+
+        if (criteria.type === "checkin_count" && allCheckins.length >= criteria.count) {
+          await storage.awardBadge(userId, badge.id);
+        }
+      }
+
+      res.status(201).json(checkin);
+    } catch (error) {
+      console.error("Error creating checkin:", error);
+      res.status(500).json({ message: "Failed to create checkin" });
+    }
+  });
+
+  app.get("/api/checkins", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userCheckins = await storage.getUserCheckins(userId);
+      res.json(userCheckins);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch checkins" });
+    }
+  });
+
+  // ─── Badges ───
+  app.get("/api/badges", async (_req, res) => {
+    try {
+      const allBadges = await storage.getAllBadges();
+      res.json(allBadges);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch badges" });
+    }
+  });
+
+  app.get("/api/badges/me", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userBadgeList = await storage.getUserBadges(userId);
+      res.json(userBadgeList);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user badges" });
+    }
+  });
+
+  // ─── Loi 25: Data Export & Delete ───
+  app.get("/api/privacy/export", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const data = await storage.getUserDataExport(userId);
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to export data" });
+    }
+  });
+
+  app.delete("/api/privacy/data", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.deleteUserData(userId);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete data" });
+    }
+  });
+
+  // ─── Badge check on content view ───
+  app.post("/api/badges/check", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const allBadges = await storage.getAllBadges();
+      const awarded: string[] = [];
+
+      const watchedContent = await storage.getPointEvents(userId);
+      const watchedCategories = new Set(watchedContent.map(e => e.content.category));
+      const checkinsList = await storage.getUserCheckins(userId);
+
+      for (const badge of allBadges) {
+        const criteria = badge.criteria as any;
+        if (!criteria) continue;
+        const has = await storage.hasUserBadge(userId, badge.id);
+        if (has) continue;
+
+        if (criteria.type === "genre_count" && watchedCategories.size >= criteria.count) {
+          await storage.awardBadge(userId, badge.id);
+          awarded.push(badge.name);
+        }
+        if (criteria.type === "watch_count" && watchedContent.length >= criteria.count) {
+          await storage.awardBadge(userId, badge.id);
+          awarded.push(badge.name);
+        }
+        if (criteria.type === "checkin_count" && checkinsList.length >= criteria.count) {
+          await storage.awardBadge(userId, badge.id);
+          awarded.push(badge.name);
+        }
+      }
+
+      res.json({ awarded });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to check badges" });
+    }
+  });
+
   return httpServer;
 }

@@ -2,6 +2,7 @@ import {
   contents, favorites, watchProgress, venues, events,
   curations, curationItems, watchParties, partyMessages,
   qaSessions, qaMessages, userPoints, pointEvents, rewards,
+  contentEvents, userProfiles, socialActivities, checkins, badges, userBadges,
   type Content, type InsertContent,
   type Favorite, type InsertFavorite,
   type WatchProgress, type InsertWatchProgress,
@@ -15,9 +16,15 @@ import {
   type QaMessage, type InsertQaMessage,
   type UserPoints, type PointEvent,
   type Reward, type InsertReward,
+  type ContentEvent, type InsertContentEvent,
+  type UserProfile, type InsertUserProfile,
+  type SocialActivity, type InsertSocialActivity,
+  type Checkin, type InsertCheckin,
+  type BadgeDef, type InsertBadge,
+  type UserBadge, type InsertUserBadge,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, ilike, or, desc, sql } from "drizzle-orm";
+import { eq, and, ilike, or, desc, sql, count } from "drizzle-orm";
 
 export interface IStorage {
   getAllContents(): Promise<Content[]>;
@@ -65,6 +72,35 @@ export interface IStorage {
   getPointEvents(userId: string): Promise<(PointEvent & { content: Content })[]>;
   getUserRewards(userId: string): Promise<Reward[]>;
   redeemReward(userId: string, description: string, pointsCost: number): Promise<Reward>;
+
+  trackEvent(event: InsertContentEvent): Promise<ContentEvent>;
+  getAdminOverview(): Promise<{
+    totalViews: number;
+    ticketClicks: number;
+    conversionRate: number;
+    diversityTransitions: number;
+    totalUsers: number;
+  }>;
+  getAdminHeatmap(): Promise<{ postalPrefix: string; views: number }[]>;
+  getAdminRetention(): Promise<{ contentId: string; title: string; artist: string; totalWatchSeconds: number; viewCount: number }[]>;
+  getAdminConversionFunnel(): Promise<{ contentId: string; title: string; views: number; ticketClicks: number }[]>;
+
+  getUserProfile(userId: string): Promise<UserProfile | undefined>;
+  upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+  getSocialFeed(limit?: number): Promise<(SocialActivity & { content?: Content; profile?: UserProfile })[]>;
+  addSocialActivity(activity: InsertSocialActivity): Promise<SocialActivity>;
+
+  createCheckin(checkin: InsertCheckin): Promise<Checkin>;
+  getUserCheckins(userId: string): Promise<(Checkin & { venue: Venue })[]>;
+
+  getAllBadges(): Promise<BadgeDef[]>;
+  getUserBadges(userId: string): Promise<(UserBadge & { badge: BadgeDef })[]>;
+  awardBadge(userId: string, badgeId: string): Promise<UserBadge>;
+  hasUserBadge(userId: string, badgeId: string): Promise<boolean>;
+  createBadge(badge: InsertBadge): Promise<BadgeDef>;
+
+  getUserDataExport(userId: string): Promise<any>;
+  deleteUserData(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -338,6 +374,210 @@ export class DatabaseStorage implements IStorage {
       pointsCost,
     }).returning();
     return reward;
+  }
+  async trackEvent(event: InsertContentEvent): Promise<ContentEvent> {
+    const [created] = await db.insert(contentEvents).values(event).returning();
+    return created;
+  }
+
+  async getAdminOverview() {
+    const [viewsResult] = await db.select({ c: count() }).from(contentEvents).where(eq(contentEvents.eventType, "view_start"));
+    const [ticketResult] = await db.select({ c: count() }).from(contentEvents).where(eq(contentEvents.eventType, "ticket_click"));
+    const [diversityResult] = await db.select({ c: count() }).from(contentEvents).where(eq(contentEvents.eventType, "category_transition"));
+    const allProfiles = await db.select({ c: count() }).from(userProfiles);
+    const totalViews = viewsResult?.c || 0;
+    const ticketClicks = ticketResult?.c || 0;
+    return {
+      totalViews,
+      ticketClicks,
+      conversionRate: totalViews > 0 ? Math.round((ticketClicks / totalViews) * 100) : 0,
+      diversityTransitions: diversityResult?.c || 0,
+      totalUsers: allProfiles[0]?.c || 0,
+    };
+  }
+
+  async getAdminHeatmap() {
+    const result = await db.select({
+      postalPrefix: contentEvents.postalPrefix,
+      views: count(),
+    })
+      .from(contentEvents)
+      .where(and(
+        eq(contentEvents.eventType, "view_start"),
+        sql`${contentEvents.postalPrefix} IS NOT NULL`
+      ))
+      .groupBy(contentEvents.postalPrefix);
+    return result.map(r => ({ postalPrefix: r.postalPrefix || "N/A", views: r.views }));
+  }
+
+  async getAdminRetention() {
+    const allContent = await this.getAllContents();
+    const result: { contentId: string; title: string; artist: string; totalWatchSeconds: number; viewCount: number }[] = [];
+    for (const c of allContent) {
+      const progress = await db.select({
+        total: sql<number>`COALESCE(SUM(${watchProgress.progressSeconds}), 0)`,
+        cnt: count(),
+      }).from(watchProgress).where(eq(watchProgress.contentId, c.id));
+      result.push({
+        contentId: c.id,
+        title: c.title,
+        artist: c.artist,
+        totalWatchSeconds: Number(progress[0]?.total || 0),
+        viewCount: progress[0]?.cnt || 0,
+      });
+    }
+    return result.filter(r => r.viewCount > 0).sort((a, b) => b.totalWatchSeconds - a.totalWatchSeconds);
+  }
+
+  async getAdminConversionFunnel() {
+    const allContent = await this.getAllContents();
+    const result: { contentId: string; title: string; views: number; ticketClicks: number }[] = [];
+    for (const c of allContent) {
+      const [views] = await db.select({ c: count() }).from(contentEvents).where(and(eq(contentEvents.contentId, c.id), eq(contentEvents.eventType, "view_start")));
+      const [clicks] = await db.select({ c: count() }).from(contentEvents).where(and(eq(contentEvents.contentId, c.id), eq(contentEvents.eventType, "ticket_click")));
+      if ((views?.c || 0) > 0 || (clicks?.c || 0) > 0) {
+        result.push({ contentId: c.id, title: c.title, views: views?.c || 0, ticketClicks: clicks?.c || 0 });
+      }
+    }
+    return result.sort((a, b) => b.views - a.views);
+  }
+
+  async getUserProfile(userId: string): Promise<UserProfile | undefined> {
+    const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId));
+    return profile;
+  }
+
+  async upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile> {
+    const existing = await this.getUserProfile(profile.userId);
+    if (existing) {
+      const [updated] = await db.update(userProfiles)
+        .set({
+          displayName: profile.displayName ?? existing.displayName,
+          bio: profile.bio ?? existing.bio,
+          avatarUrl: profile.avatarUrl ?? existing.avatarUrl,
+          isCuratorOptIn: profile.isCuratorOptIn ?? existing.isCuratorOptIn,
+          isSocialOptIn: profile.isSocialOptIn ?? existing.isSocialOptIn,
+          showFavorites: profile.showFavorites ?? existing.showFavorites,
+          showWatchHistory: profile.showWatchHistory ?? existing.showWatchHistory,
+          showReadings: profile.showReadings ?? existing.showReadings,
+        })
+        .where(eq(userProfiles.userId, profile.userId))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(userProfiles).values(profile).returning();
+    return created;
+  }
+
+  async getSocialFeed(limit = 20): Promise<(SocialActivity & { content?: Content; profile?: UserProfile })[]> {
+    const optInUsers = await db.select({ userId: userProfiles.userId })
+      .from(userProfiles)
+      .where(eq(userProfiles.isSocialOptIn, true));
+    const optInUserIds = optInUsers.map(u => u.userId);
+    if (optInUserIds.length === 0) return [];
+
+    const activities = await db.select().from(socialActivities)
+      .where(sql`${socialActivities.userId} IN (${sql.join(optInUserIds.map(id => sql`${id}`), sql`, `)})`)
+      .orderBy(desc(socialActivities.createdAt))
+      .limit(limit);
+
+    const result: (SocialActivity & { content?: Content; profile?: UserProfile })[] = [];
+    for (const activity of activities) {
+      const content = activity.contentId ? await this.getContent(activity.contentId) : undefined;
+      const profile = await this.getUserProfile(activity.userId);
+      result.push({ ...activity, content, profile: profile || undefined });
+    }
+    return result;
+  }
+
+  async addSocialActivity(activity: InsertSocialActivity): Promise<SocialActivity> {
+    const [created] = await db.insert(socialActivities).values(activity).returning();
+    return created;
+  }
+
+  async createCheckin(checkin: InsertCheckin): Promise<Checkin> {
+    const [created] = await db.insert(checkins).values(checkin).returning();
+    return created;
+  }
+
+  async getUserCheckins(userId: string): Promise<(Checkin & { venue: Venue })[]> {
+    const userCheckins = await db.select().from(checkins)
+      .where(eq(checkins.userId, userId))
+      .orderBy(desc(checkins.createdAt));
+    const result: (Checkin & { venue: Venue })[] = [];
+    for (const ci of userCheckins) {
+      const venue = await this.getVenue(ci.venueId);
+      if (venue) {
+        result.push({ ...ci, venue });
+      }
+    }
+    return result;
+  }
+
+  async getAllBadges(): Promise<BadgeDef[]> {
+    return db.select().from(badges);
+  }
+
+  async getUserBadges(userId: string): Promise<(UserBadge & { badge: BadgeDef })[]> {
+    const ubs = await db.select().from(userBadges).where(eq(userBadges.userId, userId));
+    const result: (UserBadge & { badge: BadgeDef })[] = [];
+    for (const ub of ubs) {
+      const [badge] = await db.select().from(badges).where(eq(badges.id, ub.badgeId));
+      if (badge) {
+        result.push({ ...ub, badge });
+      }
+    }
+    return result;
+  }
+
+  async awardBadge(userId: string, badgeId: string): Promise<UserBadge> {
+    const [created] = await db.insert(userBadges).values({ userId, badgeId }).returning();
+    return created;
+  }
+
+  async hasUserBadge(userId: string, badgeId: string): Promise<boolean> {
+    const [ub] = await db.select().from(userBadges)
+      .where(and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badgeId)));
+    return !!ub;
+  }
+
+  async createBadge(badge: InsertBadge): Promise<BadgeDef> {
+    const [created] = await db.insert(badges).values(badge).returning();
+    return created;
+  }
+
+  async getUserDataExport(userId: string) {
+    const profile = await this.getUserProfile(userId);
+    const favs = await this.getFavorites(userId);
+    const progress = await db.select().from(watchProgress).where(eq(watchProgress.userId, userId));
+    const points = await this.getUserPoints(userId);
+    const pEvents = await this.getPointEvents(userId);
+    const userRewards = await this.getUserRewards(userId);
+    const userCheckins = await this.getUserCheckins(userId);
+    const userBadgeList = await this.getUserBadges(userId);
+    return {
+      profile,
+      favorites: favs,
+      watchProgress: progress,
+      points,
+      pointEvents: pEvents,
+      rewards: userRewards,
+      checkins: userCheckins,
+      badges: userBadgeList,
+    };
+  }
+
+  async deleteUserData(userId: string): Promise<void> {
+    await db.delete(favorites).where(eq(favorites.userId, userId));
+    await db.delete(watchProgress).where(eq(watchProgress.userId, userId));
+    await db.delete(pointEvents).where(eq(pointEvents.userId, userId));
+    await db.delete(userPoints).where(eq(userPoints.userId, userId));
+    await db.delete(rewards).where(eq(rewards.userId, userId));
+    await db.delete(socialActivities).where(eq(socialActivities.userId, userId));
+    await db.delete(checkins).where(eq(checkins.userId, userId));
+    await db.delete(userBadges).where(eq(userBadges.userId, userId));
+    await db.delete(userProfiles).where(eq(userProfiles.userId, userId));
+    await db.delete(contentEvents).where(eq(contentEvents.userId, userId));
   }
 }
 

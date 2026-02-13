@@ -1,0 +1,20 @@
+. Module "Impact & Data Dashboard" (Côté Administration/Bailleurs)
+Objectif : Transformer les interactions des utilisateurs en preuves tangibles d’impact social et culturel pour justifier les subventions et partenariats.
+Fonctionnalités à implémenter :
+Indicateurs de Découvrabilité : Suivre le passage d'un utilisateur d'un contenu "mainstream" vers un contenu issu de la diversité (mesure de l'élargissement des horizons culturels).
+Tunnel de Conversion "Écran vers Salle" : Tracker le nombre de clics sur le bouton "Acheter un billet" après le visionnement d'une vidéo. C’est la donnée la plus critique pour prouver notre soutien à l'économie réelle.
+Cartographie de l'Audience (Heatmap) : Visualisation anonymisée de la consommation de contenu par secteurs géographiques (codes postaux) à Montréal et au Québec.
+Statistiques de Rétention Artistique : Analyse du temps de visionnement par œuvre (pour aider les créateurs à comprendre l'engagement du public envers leur travail).
+Bénéfice : Fournir des rapports automatisés aux bailleurs (SODEC, Conseil des Arts, Ville de Montréal) démontrant le ROI (retour sur investissement) social de la plateforme.
+2. Module "Passeport Culturel & Profil Social" (Côté Membre)
+Objectif : Utiliser la recommandation par les pairs et la gamification pour briser l'isolement numérique et encourager les sorties au théâtre.
+Fonctionnalités à implémenter :
+Profil "Curateur" (Opt-in) : Espace personnel où le membre peut choisir d'afficher ses "Coups de cœur", ses vidéos vues et ses lectures en cours.
+Le "Foyer Numérique" (Social Proof) : Flux d'activité permettant de voir ce que les membres de la communauté (ou des amis) regardent ou recommandent. Note : Intégrer une option de confidentialité stricte (Loi 25).
+Le "Check-in" Spectacle (Preuve de Présence) : Fonctionnalité permettant de scanner un QR Code dans un théâtre physique ou de se géolocaliser pour dire "J'y étais". Cela lie l'activité numérique à l'activité réelle.
+Système de Récompenses (Badges) : Gamifier le parcours (ex: Badge "Explorateur" après avoir vu 3 genres différents, Badge "Ambassadeur" après 5 check-ins en salle).
+Bénéfice : Créer un sentiment d'appartenance et utiliser la "pression sociale positive" pour inciter les membres à découvrir de nouvelles œuvres et à fréquenter les lieux de diffusion.
+3. Directives Techniques & Éthiques (Pour le développement)
+Confidentialité (Loi 25) : L'utilisateur doit avoir un contrôle total sur ses données. Le partage du profil doit être une démarche volontaire (Opt-in). L'anonymisation doit être la règle pour les données agrégées envoyées aux tiers.
+Interopérabilité : Le système de "Check-in" et d'achat de billets doit être conçu pour pouvoir s'interfacer avec les billetteries majeures de Montréal via des APIs simples ou des redirections trackées.
+Expérience Utilisateur (UX) : L'aspect social ne doit pas encombrer l'interface de lecture. Il doit être présenté comme un enrichissement (une option "Social" dans le menu).

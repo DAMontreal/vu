@@ -4,7 +4,17 @@
 VU is a Netflix-style web application dedicated to performing arts (theatre, dance, literature). Built for the Montreal arts scene, it allows users to discover, watch, and engage with performing arts content. Features interactive map, artist curations, watch parties, Q&A live sessions, and a cultural passport rewards system.
 
 ## Recent Changes
-- 2026-02-13: Major feature additions
+- 2026-02-13: Module 2 - Impact Dashboard, Social Profile, Loi 25
+  - Admin Impact Dashboard (/admin/impact): conversion funnel, retention stats, heatmap visualization
+  - User Profile (/profil): opt-in toggles for social/curator, badge showcase, Loi 25 privacy controls
+  - Foyer Numérique (/social): social activity feed, venue check-in feature (QR/geolocation)
+  - Gamified badge system: 6 default badges auto-awarded based on activity
+  - Event tracking: page_view, view_start, ticket_click events on spectacle pages
+  - Loi 25 compliance: data export (GET /api/privacy/export), data deletion (DELETE /api/privacy/data)
+  - Extended Passeport Culturel with badges section and check-ins
+  - 6 new DB tables: content_events, user_profiles, social_activities, checkins, badges, user_badges
+
+- 2026-02-13: Module 1 feature additions
   - Interactive map of Montreal with live venue markers (Leaflet)
   - Carte Blanche: Monthly artist curation (Robert Lepage as first curator)
   - Watch Parties: Real-time synchronized viewing with chat (Socket.io)

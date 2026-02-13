@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp, pgEnum, real } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, timestamp, pgEnum, real, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -148,6 +148,78 @@ export const rewards = pgTable("rewards", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const eventTypeEnum = pgEnum("event_type", [
+  "page_view",
+  "view_start",
+  "view_end",
+  "ticket_click",
+  "category_transition",
+  "favorite_add",
+  "checkin",
+]);
+
+export const checkinMethodEnum = pgEnum("checkin_method", ["qr", "geo"]);
+
+export const contentEvents = pgTable("content_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"),
+  contentId: varchar("content_id").notNull(),
+  eventType: eventTypeEnum("event_type").notNull(),
+  metadata: jsonb("metadata"),
+  postalPrefix: varchar("postal_prefix"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const userProfiles = pgTable("user_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  displayName: text("display_name"),
+  bio: text("bio"),
+  avatarUrl: text("avatar_url"),
+  isCuratorOptIn: boolean("is_curator_opt_in").default(false),
+  isSocialOptIn: boolean("is_social_opt_in").default(false),
+  showFavorites: boolean("show_favorites").default(false),
+  showWatchHistory: boolean("show_watch_history").default(false),
+  showReadings: boolean("show_readings").default(false),
+  isAdmin: boolean("is_admin").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const socialActivities = pgTable("social_activities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  activityType: text("activity_type").notNull(),
+  contentId: varchar("content_id"),
+  venueId: varchar("venue_id"),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const checkins = pgTable("checkins", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  venueId: varchar("venue_id").notNull(),
+  eventId: varchar("event_id"),
+  method: checkinMethodEnum("method").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const badges = pgTable("badges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(),
+  criteria: jsonb("criteria"),
+});
+
+export const userBadges = pgTable("user_badges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  badgeId: varchar("badge_id").notNull(),
+  awardedAt: timestamp("awarded_at").defaultNow(),
+});
+
 export const contentsRelations = relations(contents, ({ many }) => ({
   favorites: many(favorites),
   watchProgress: many(watchProgress),
@@ -228,3 +300,23 @@ export type UserPoints = typeof userPoints.$inferSelect;
 export type PointEvent = typeof pointEvents.$inferSelect;
 export type Reward = typeof rewards.$inferSelect;
 export type InsertReward = z.infer<typeof insertRewardSchema>;
+
+export const insertContentEventSchema = createInsertSchema(contentEvents).omit({ id: true, createdAt: true });
+export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({ id: true, createdAt: true });
+export const insertSocialActivitySchema = createInsertSchema(socialActivities).omit({ id: true, createdAt: true });
+export const insertCheckinSchema = createInsertSchema(checkins).omit({ id: true, createdAt: true });
+export const insertBadgeSchema = createInsertSchema(badges).omit({ id: true });
+export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({ id: true, awardedAt: true });
+
+export type ContentEvent = typeof contentEvents.$inferSelect;
+export type InsertContentEvent = z.infer<typeof insertContentEventSchema>;
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
+export type SocialActivity = typeof socialActivities.$inferSelect;
+export type InsertSocialActivity = z.infer<typeof insertSocialActivitySchema>;
+export type Checkin = typeof checkins.$inferSelect;
+export type InsertCheckin = z.infer<typeof insertCheckinSchema>;
+export type BadgeDef = typeof badges.$inferSelect;
+export type InsertBadge = z.infer<typeof insertBadgeSchema>;
+export type UserBadge = typeof userBadges.$inferSelect;
+export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
