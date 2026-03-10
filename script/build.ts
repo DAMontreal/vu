@@ -30,6 +30,9 @@ const allowlist = [
   "xlsx",
   "zod",
   "zod-validation-error",
+  "memoizee",
+  "openid-client",
+  "socket.io",
 ];
 
 async function buildAll() {

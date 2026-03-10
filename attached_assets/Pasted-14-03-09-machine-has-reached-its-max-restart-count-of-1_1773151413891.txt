@@ -1,0 +1,78 @@
+14:03:09
+machine has reached its max restart count of 10
+14:03:12
+waiting for machine to be reachable on 0.0.0.0:8080 (waited 5.444007563s so far)
+14:03:17
+waiting for machine to be reachable on 0.0.0.0:8080 (waited 10.451176336s so far)
+14:03:17
+[PM05] failed to connect to machine: gave up after 15 attempts (in 10.451312755s)
+14:03:18
+Starting machine
+14:03:18
+2026-03-10T14:03:18.748550399 [01KKC0T01NTM0X0QX8ZTW578ZB:main] Running Firecracker v1.14.2
+14:03:18
+2026-03-10T14:03:18.748770157 [01KKC0T01NTM0X0QX8ZTW578ZB:main] Listening on API socket ("/fc.sock").
+14:03:19
+ INFO Starting init (commit: 350f2667)...
+14:03:19
+ INFO Preparing to run: `docker-entrypoint.sh npm run start` as root
+14:03:19
+ INFO [fly api proxy] listening at /.fly/api
+14:03:20
+Machine started in 1.288s
+14:03:20
+machine started in 1.470414353s
+14:03:20
+2026/03/10 14:03:20 INFO SSH listening listen_address=[fdaa:4e:f3dd:a7b:4ca:797d:801:2]:22
+14:03:20
+> rest-express@1.0.0 start
+14:03:20
+> NODE_ENV=production node dist/index.cjs
+14:03:21
+file:///app/node_modules/openid-client/build/index.js:89
+14:03:21
+    const err = new TypeError(message, { cause });
+14:03:21
+                ^
+14:03:21
+TypeError: "clientId" must be a non-empty string
+14:03:21
+    at CodedTypeError (file:///app/node_modules/openid-client/build/index.js:89:17)
+14:03:21
+    at new Configuration (file:///app/node_modules/openid-client/build/index.js:463:19)
+14:03:21
+    at Object.discovery (file:///app/node_modules/openid-client/build/index.js:244:22)
+14:03:21
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+14:03:21
+    at async J4.maxAge (/app/dist/index.cjs:64:34177)
+14:03:21
+    at async Ah (/app/dist/index.cjs:64:34980)
+14:03:21
+    at async r2 (/app/dist/index.cjs:64:36522)
+14:03:21
+    at async /app/dist/index.cjs:64:49278 {
+14:03:21
+  code: 'ERR_INVALID_ARG_TYPE',
+14:03:21
+  [cause]: undefined
+14:03:21
+}
+14:03:21
+Node.js v22.21.1
+14:03:21
+npm notice
+14:03:21
+npm notice New major version of npm available! 10.9.4 -> 11.11.0
+14:03:21
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.0
+14:03:21
+npm notice To update run: npm install -g npm@11.11.0
+14:03:21
+npm notice
+14:03:21
+ INFO Main child exited normally with code: 1
+14:03:21
+ INFO Starting clean up.
+14:03:21
+[    3.017834] reboot: Restarting system
